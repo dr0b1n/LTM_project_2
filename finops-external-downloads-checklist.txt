@@ -1,0 +1,69 @@
+AUTONOMOUS CLOUD FINOPS AGENT - EXTERNAL ACCESS CHECKLIST
+
+Required workstation and runtime software
+1. CPython 3.12, 64-bit, including pip and venv.
+2. Git client.
+3. Docker Desktop or company-approved Docker Engine with Docker Compose.
+4. HashiCorp Terraform CLI, pinned to an approved version.
+5. TFLint CLI plus only the approved AWS/Azure ruleset plugins.
+6. Ollama runtime only if local LLM summaries are enabled.
+7. VS Code is optional; request the Python, Docker, Terraform and YAML extensions if permitted.
+8. Visual Studio Build Tools C++ workload on Windows only if approved wheels are unavailable and native compilation is required.
+
+Cloud command-line tools and identity
+1. AWS CLI v2 if AWS discovery or approved command execution is required.
+2. Azure CLI if Azure discovery or approved command execution is required.
+3. Read-only AWS IAM role for discovery, Cost Explorer, CloudWatch and resource metadata.
+4. Read-only Microsoft Entra/Azure role for inventory, Monitor and Cost Management.
+5. A separate tightly scoped remediation identity only for approved execution. Do not reuse the discovery identity.
+6. Prefer workload identity/OIDC or managed identity over long-lived access keys.
+
+Required model artifact
+1. If using natural-language summaries, approve one local Ollama instruct model and pin its exact tag/digest and license.
+2. A small model is sufficient because remediation decisions must remain deterministic; the LLM should only summarize validated findings.
+3. No model should be permitted to directly execute Terraform or cloud CLI commands.
+
+Required package, registry and artifact allow-lists
+1. pypi.org and files.pythonhosted.org, or an internal Python package mirror.
+2. github.com and objects.githubusercontent.com, or an internal source mirror.
+3. releases.hashicorp.com for Terraform, unless mirrored internally.
+4. registry.terraform.io for approved providers/modules, unless using an internal Terraform registry or network mirror.
+5. ghcr.io and/or registry-1.docker.io only for explicitly approved, digest-pinned images; prefer an internal container registry.
+6. ollama.com and the Ollama model registry only if Ollama artifacts are not mirrored internally.
+7. api.slack.com/hooks.slack.com only if Slack alerts are approved.
+8. Microsoft Graph/Teams and Entra endpoints only if Teams alerts or Azure authentication are approved.
+9. AWS and Azure service endpoints required by the selected inventory, monitoring and cost APIs.
+
+Recommended approved container and CI artifacts
+1. Company-approved Python 3.11 slim Linux base image pinned by digest.
+2. HashiCorp Terraform binary or image pinned to an exact version/digest.
+3. TFLint binary and ruleset plugins pinned by checksum/version.
+4. Checkov package/image pinned and scanned.
+5. GitHub Actions: actions/checkout, actions/setup-python, hashicorp/setup-terraform, Docker build/push actions and artifact upload/download actions, all pinned to immutable commit SHAs under company policy.
+
+Production services and platform prerequisites
+1. Internal container registry with image signing and vulnerability scanning.
+2. Scheduled container platform, Kubernetes CronJob, approved enterprise scheduler or one dedicated APScheduler instance.
+3. PostgreSQL for production audit history and scheduler state; SQLite is suitable only for a single-instance demonstration.
+4. Secret manager for credentials, webhook URLs and signing keys.
+5. Centralized logs, Prometheus-compatible metrics and an OpenTelemetry collector/backend.
+6. Encrypted object storage for telemetry inputs, generated plans, reports and immutable audit evidence.
+7. Backup, retention, restore and legal/audit retention procedures.
+8. Network egress controls and private endpoints where supported.
+9. Slack app/incoming webhook or Teams app/workflow/webhook approved by collaboration administrators.
+
+Mandatory safety gates before production execution
+1. Default mode must be DRY_RUN/PLAN_ONLY.
+2. Protect production, critical, legal-hold and exception-tagged resources with deny rules.
+3. Require human approval and separation of duties before any Terraform apply or destructive CLI action.
+4. Run terraform fmt, terraform validate, terraform plan, TFLint and Checkov before approval.
+5. Pin Terraform providers/modules and preserve the reviewed plan artifact.
+6. Use least privilege, idempotency keys, retry limits, concurrency locks and rollback/runbook procedures.
+7. Never allow the summarization LLM to choose or execute remediation actions.
+
+Offline/restricted-network preparation
+1. Mirror all Python wheels and transitive dependencies for the deployment OS/architecture.
+2. Mirror Docker images by immutable digest.
+3. Mirror Terraform providers/modules, TFLint plugins and Ollama model blobs.
+4. Record source, version, license, checksum/digest, SBOM and security-scan evidence for every artifact.
+5. Generate the final hash-locked requirements file only after installation and tests succeed in the target build image.

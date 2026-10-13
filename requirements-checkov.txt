@@ -1,0 +1,2 @@
+# Checkov is installed in a dedicated environment
+checkov==3.3.16

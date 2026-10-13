@@ -1,0 +1,1098 @@
+AUTONOMOUS CLOUD FINOPS REMEDIATION AGENT
+MASTER PROJECT CONTEXT FOR FUTURE AI PROMPTS
+
+HOW TO USE THIS FILE
+Copy or attach this entire file at the beginning of a future AI conversation. Then add a specific request such as:
+- "Using this project context, create the Pydantic telemetry models."
+- "Implement the deterministic FinOps policy engine and unit tests."
+- "Generate safe Terraform remediation templates for the approved actions."
+- "Review the project for missing production safety controls."
+- "Create synthetic AWS and Azure telemetry with ground-truth outcomes."
+
+============================================================
+1. PROJECT TITLE
+============================================================
+
+Autonomous Cloud FinOps Remediation Agent
+
+============================================================
+2. PROJECT SUMMARY
+============================================================
+
+The Autonomous Cloud FinOps Remediation Agent is a policy-driven cloud-cost optimization and governance application. It analyzes structured AWS and Azure resource telemetry, utilization metrics, billing information, attachment states, lifecycle data, and ownership tags to identify cloud waste.
+
+The system detects conditions such as idle compute instances, unattached storage volumes, legacy snapshots, unassociated public IP addresses, oversized resources, and missing governance tags. A deterministic Python state machine applies version-controlled FinOps policies and selects a safe recommendation such as DOWNSIZE, ARCHIVE, TERMINATE, NO_ACTION, or REVIEW_REQUIRED.
+
+The project generates reviewable Infrastructure-as-Code remediation artifacts using Jinja2 and Terraform. It validates generated Terraform with Terraform CLI, TFLint, and Checkov before presenting it for human approval. The initial implementation is dry-run and plan-only. It must never execute destructive cloud changes autonomously.
+
+A local Ollama model may convert validated technical findings into concise incident summaries. The LLM is not permitted to decide remediation actions, calculate authoritative savings, modify policy outcomes, execute commands, or bypass safety controls.
+
+============================================================
+3. PROBLEM STATEMENT
+============================================================
+
+Organizations lose cloud budget to resources that remain active after testing, including idle virtual machines, unattached disks, old snapshots, unassociated public IP addresses, and oversized compute or database services. Manual identification and cleanup are repetitive, inconsistent, difficult to audit, and potentially unsafe.
+
+An automated FinOps system must identify cost waste while protecting production, critical, legally retained, recently created, or explicitly exempted resources. Every recommendation must be explainable, policy-backed, auditable, and reviewable before execution.
+
+============================================================
+4. PROJECT OBJECTIVES
+============================================================
+
+1. Ingest structured AWS and Azure telemetry from JSON and CSV files.
+2. Validate every input record with strict Pydantic schemas.
+3. Normalize provider-specific telemetry into a common resource model.
+4. Analyze utilization, attachment state, age, tags, ownership, and monthly cost.
+5. Load version-controlled FinOps policies from YAML or JSON.
+6. Detect cloud waste using deterministic and explainable rules.
+7. Protect production, critical, exempted, unknown, and insufficiently observed resources.
+8. Select one controlled outcome: DOWNSIZE, ARCHIVE, TERMINATE, NO_ACTION, or REVIEW_REQUIRED.
+9. Estimate monthly and annual savings using transparent formulas.
+10. Generate Terraform or cloud CLI remediation artifacts through approved templates.
+11. Validate Terraform with terraform fmt, terraform validate, TFLint, Checkov, and terraform plan where applicable.
+12. Produce Slack-, Teams-, email-, or dashboard-ready incident summaries.
+13. Store run history, findings, validation results, approvals, and estimated savings.
+14. Run safety, unit, integration, policy-drift, and regression tests in CI/CD.
+15. Package the agent for repeatable scheduled execution using Docker.
+16. Keep remediation execution disabled until a separate approved production phase.
+
+============================================================
+5. END-TO-END WORKFLOW
+============================================================
+
+Telemetry Input
+    -> File and Schema Validation
+    -> Provider-Specific Normalization
+    -> Resource Enrichment and Tag Validation
+    -> Deterministic Policy Evaluation
+    -> Production and Critical Resource Safety Gate
+    -> Waste Classification
+    -> Savings Calculation
+    -> Remediation Recommendation
+    -> Jinja2 Terraform/CLI Artifact Generation
+    -> Terraform Formatting and Validation
+    -> TFLint and Checkov Security Scanning
+    -> Terraform Plan Generation Where Approved
+    -> Human Review and Approval
+    -> Incident Summary and Audit Record
+    -> CI/CD Regression and Drift Testing
+
+State-machine view:
+
+OBSERVE -> ANALYZE -> DECIDE -> GENERATE -> VALIDATE -> REPORT
+
+A future ACT state may exist only after formal approval, separate credentials, human authorization, and production change-management integration.
+
+============================================================
+6. CORE ARCHITECTURE
+============================================================
+
+Agent Core:
+- Python state machine
+- Deterministic Observe, Analyze, Decide, Generate, Validate, and Report transitions
+- Idempotent run identifiers
+- Controlled retry and timeout behavior
+- No autonomous destructive execution
+
+Telemetry Input:
+- JSON and CSV files during development
+- Synthetic AWS and Azure resource and billing records
+- Optional live AWS and Azure SDK connectors in a later phase
+- Quarantine malformed or incomplete records instead of guessing values
+
+Validation and Analysis:
+- Pydantic for schemas and field validation
+- Pandas and NumPy for tabular filtering, aggregation, trends, and savings calculations
+- PyArrow for efficient columnar data if needed
+- Explicit timezone handling for resource age and observation windows
+
+Policy Engine:
+- Version-controlled YAML/JSON policies
+- Business rules separated from application code
+- Policies specify thresholds, observation periods, actions, exclusions, severity, approval requirements, and calculation methods
+- Default-deny behavior for destructive actions
+
+Safety Engine:
+- Production and critical tag protection
+- Environment allow-list and deny-list
+- Minimum observation period
+- Missing-owner and unknown-environment escalation
+- Maximum findings/remediations per run
+- Legal-hold and exemption support
+- Human approval for all material actions
+- Dry-run by default
+
+Remediation Compiler:
+- Jinja2 templates
+- Terraform .tf generation
+- Optional cloud CLI command generation for review only
+- Templates are parameterized, versioned, tested, and allow-listed
+- User-provided text must never be rendered as executable template logic
+
+Infrastructure-as-Code Validation:
+- terraform fmt
+- terraform init with controlled provider access
+- terraform validate
+- TFLint
+- Checkov in a separate environment or standalone binary
+- terraform plan when credentials and providers are approved
+- Preserve the reviewed plan artifact and validation evidence
+
+Summary Engine:
+- Local Ollama runtime
+- Suggested lightweight model: granite4.1:3b
+- Larger model is unnecessary for deterministic decisions
+- The LLM only summarizes already validated structured results
+- Low temperature and Pydantic-validated summary schema
+
+Persistence:
+- SQLite for a local single-instance demonstration
+- SQLAlchemy and Alembic for data access and migrations
+- PostgreSQL recommended for multi-instance production
+- Store audit history, decisions, policies, artifacts, scans, approvals, and estimated savings
+
+API and Operations:
+- Optional FastAPI operational API
+- Health, readiness, run status, findings, approval, and audit endpoints
+- APScheduler for local demonstration scheduling
+- Enterprise scheduler, Kubernetes CronJob, or approved platform scheduler for production
+
+Observability:
+- structlog for structured logs
+- Prometheus-compatible metrics
+- OpenTelemetry traces
+- Correlation/run IDs
+- No cloud credentials, secrets, webhook tokens, or sensitive metadata in logs
+
+============================================================
+7. DETERMINISTIC DECISION MODEL
+============================================================
+
+The policy engine, not the LLM, selects the outcome.
+
+Allowed recommendation values:
+- DOWNSIZE
+- ARCHIVE
+- TERMINATE
+- NO_ACTION
+- REVIEW_REQUIRED
+
+Recommended initial behavior:
+- Idle compute: DOWNSIZE or REVIEW_REQUIRED
+- Unattached storage: ARCHIVE or REVIEW_REQUIRED
+- Legacy unreferenced snapshot: ARCHIVE
+- Unassociated public IP: REVIEW_REQUIRED or RELEASE recommendation
+- Oversized database: DOWNSIZE or REVIEW_REQUIRED
+- Production/critical resource: NO_ACTION or REVIEW_REQUIRED
+- Missing owner/environment: REVIEW_REQUIRED
+- Insufficient observation history: NO_ACTION or REVIEW_REQUIRED
+
+TERMINATE should be rare and must always require explicit human approval. The first project version should generate plans and recommendations only.
+
+Decision precedence:
+1. Invalid or incomplete telemetry -> REVIEW_REQUIRED
+2. Protected, production, critical, legal-hold, or exempt resource -> NO_ACTION/REVIEW_REQUIRED
+3. Insufficient observation period -> NO_ACTION
+4. Policy condition not met -> NO_ACTION
+5. Policy condition met but ownership/impact uncertain -> REVIEW_REQUIRED
+6. Policy condition met with clear non-production evidence -> approved recommendation
+
+============================================================
+8. POLICY BASELINE DESIGN
+============================================================
+
+Each policy should include:
+- policy_id
+- policy_version
+- title
+- category
+- supported_clouds
+- resource_type
+- enabled
+- severity
+- conditions
+- minimum_observation_days
+- recommended_action
+- savings_method
+- protected_environments
+- protected_tags
+- exemption_tags
+- requires_human_approval
+- remediation_template
+- explanation
+- owner
+- effective_date
+
+Initial policy areas:
+- Idle compute utilization
+- Unattached storage volumes
+- Legacy/unreferenced snapshots
+- Unassociated public IP addresses
+- Oversized compute instances
+- Oversized managed databases
+- Stopped resources still incurring cost
+- Missing owner tags
+- Missing environment tags
+- Test-resource lifecycle limits
+- Production protection
+- Critical-resource protection
+- Legal-hold and exception handling
+
+Policy thresholds must be explicit and measurable. The application must never ask the LLM to invent thresholds.
+
+============================================================
+9. REQUIRED TELEMETRY SCHEMA
+============================================================
+
+Common normalized resource fields:
+- resource_id
+- cloud_provider
+- account_or_subscription_id
+- resource_type
+- resource_name
+- region
+- owner
+- environment
+- tags
+- creation_time
+- observation_start
+- observation_end
+- observation_days
+- lifecycle_state
+- attachment_status
+- referenced
+- cpu_utilization_average
+- memory_utilization_average where available
+- storage_utilization_average where available
+- network_in_average
+- network_out_average
+- current_sku
+- recommended_sku where applicable
+- current_monthly_cost
+- recommended_monthly_cost
+- currency
+- production_protected
+- critical_protected
+- legal_hold
+- exemption_reason
+- source_file
+- ingested_at
+
+Rules:
+- Required fields must be validated.
+- Currency must be explicit.
+- Missing metrics must not be replaced with synthetic values during real processing.
+- Cloud-specific records must be normalized before policy evaluation.
+- Datetimes must be timezone-aware.
+- Duplicate records must be detected using stable resource and observation identifiers.
+
+============================================================
+10. REQUIRED FINDING AND AUDIT SCHEMA
+============================================================
+
+Each finding should include:
+- run_id
+- finding_id
+- resource_id
+- cloud_provider
+- account_or_subscription_id
+- policy_id
+- policy_version
+- status
+- severity
+- recommended_action
+- reason
+- evidence
+- current_monthly_cost
+- estimated_monthly_savings
+- estimated_annual_savings
+- currency
+- confidence_or_data_quality
+- protected_resource
+- requires_human_approval
+- remediation_template_version
+- generated_artifact_path
+- terraform_validation_status
+- tflint_status
+- checkov_status
+- terraform_plan_status
+- approval_status
+- reviewer
+- inference_model if summary generation was used
+- prompt_version if summary generation was used
+- code_version
+- created_at
+
+Allowed finding statuses:
+- WASTE_DETECTED
+- NO_WASTE_DETECTED
+- PROTECTED
+- INSUFFICIENT_DATA
+- REVIEW_REQUIRED
+- VALIDATION_FAILED
+
+Allowed approval statuses:
+- NOT_REQUESTED
+- PENDING
+- APPROVED
+- REJECTED
+- EXPIRED
+
+No artifact may be described as safe or production-ready until all required validations pass.
+
+============================================================
+11. DATASET STRATEGY
+============================================================
+
+Use synthetic AWS and Azure telemetry during development. This avoids requiring paid multi-cloud accounts and prevents accidental access to confidential infrastructure metadata.
+
+Synthetic dataset files may include:
+- AWS resource inventory JSON
+- Azure resource inventory JSON
+- Utilization metrics CSV
+- Billing/cost CSV
+- Resource tags JSON
+- Expected findings JSON
+
+Required scenarios:
+1. Idle non-production compute instance
+2. Low-utilization but business-critical production instance
+3. Unattached storage volume older than the policy threshold
+4. Recently detached storage volume below the observation threshold
+5. Old unreferenced snapshot
+6. Snapshot referenced by an active recovery process
+7. Unassociated public IP
+8. Oversized compute instance
+9. Oversized database
+10. Missing owner tag
+11. Unknown environment
+12. Explicit exception tag
+13. Legal-hold tag
+14. Conflicting tags
+15. Malformed telemetry
+16. Duplicate telemetry
+17. Negative, missing, or inconsistent cost values
+18. Resource crossing month or timezone boundaries
+19. Edge-case savings rounding
+20. Large run exceeding the remediation limit
+
+Ground truth should record:
+- Expected policy match
+- Expected status
+- Expected recommended action
+- Whether the resource must be protected
+- Expected savings calculation
+- Expected human approval requirement
+- Expected Terraform artifact behavior
+
+============================================================
+12. CURRENT DEVELOPMENT ENVIRONMENT
+============================================================
+
+Operating environment:
+- Windows VM
+- Visual Studio Code
+- PowerShell terminal
+- System RAM: 16 GB according to Windows Task Manager
+
+Project path:
+C:\Users\T9925\Documents\DR\agent
+
+Python environment:
+- CPython 3.12, 64-bit
+- Local application virtual environment: .venv
+- Expected interpreter:
+  C:\Users\T9925\Documents\DR\agent\.venv\Scripts\python.exe
+
+External tooling locations:
+- Terraform executable:
+  C:\Users\T9925\Tools\Terraform\terraform.exe
+- TFLint executable:
+  C:\Users\T9925\Tools\TFLint\tflint.exe
+
+Verified external tools:
+- Terraform v1.16.1 on windows_amd64
+- TFLint v0.64.0
+- Bundled TFLint Terraform ruleset v0.15.0
+- Docker v29.7.2
+- Docker Compose v5.4.0
+- Ollama installed and working
+
+PATH constraint:
+- The user cannot edit permanent Windows environment variables.
+- Terraform and TFLint are added to the current PowerShell session using:
+  $env:Path += ";C:\Users\T9925\Tools\Terraform;C:\Users\T9925\Tools\TFLint"
+- Prefer explicit executable paths in application configuration.
+- A project setup-tools.ps1 script may add these paths for each new terminal.
+
+Checkov separation:
+- Checkov 3.3.16 requires packaging>=23,<24.
+- The main environment uses wheel 0.48.0, which requires packaging>=24.
+- Therefore, Checkov must not be installed in the main .venv.
+- Use a dedicated .checkov-venv, a standalone approved Checkov binary, or a separate CI/container job.
+- Main application environment should use packaging>=24,<27.
+
+Known corporate-network constraint:
+- HTTPS inspection or an internal CA may cause CERTIFICATE_VERIFY_FAILED.
+- Do not disable SSL verification.
+- Use the approved company root/intermediate CA bundle and proxy configuration.
+- Prefer internally mirrored packages, models, Terraform providers, plugins, and container images for production.
+
+============================================================
+13. MAIN APPLICATION REQUIREMENTS.TXT
+============================================================
+
+# Target runtime: CPython 3.12, 64-bit
+
+# Core configuration, validation and rules
+pydantic[email,timezone]>=2.9,<3
+pydantic-settings>=2.5,<3
+python-dotenv>=1.0,<2
+PyYAML>=6.0,<7
+jsonschema>=4.23,<5
+packaging>=24,<27
+
+# Telemetry and cost analysis
+pandas>=2.2,<4
+numpy>=1.26,<3
+pyarrow>=17,<23
+openpyxl>=3.1,<4
+
+# Deterministic state machine and scheduling
+transitions>=0.9,<1
+APScheduler[sqlalchemy]>=3.11,<4
+tenacity>=9,<10
+
+# Remediation and Infrastructure-as-Code generation
+Jinja2>=3.1,<4
+python-hcl2>=7,<8
+
+# AWS inventory, metrics, billing and identity
+boto3>=1.35,<2
+
+# Azure identity, inventory, monitoring and cost management
+azure-identity>=1.19,<2
+azure-mgmt-resource>=23,<25
+azure-mgmt-compute>=33,<40
+azure-mgmt-network>=28,<31
+azure-mgmt-monitor>=6,<8
+azure-mgmt-costmanagement>=4,<6
+azure-mgmt-subscription>=3,<4
+
+# HTTP, alerting and local LLM summaries
+httpx>=0.27,<1
+slack-sdk>=3.33,<4
+ollama>=0.4,<1
+markdown>=3.7,<4
+
+# Optional operations API and health endpoints
+fastapi>=0.115,<1
+uvicorn[standard]>=0.30,<1
+python-multipart>=0.0.12,<1
+orjson>=3.10,<4
+
+# Audit persistence and migrations
+SQLAlchemy>=2.0,<3
+alembic>=1.13,<2
+psycopg[binary]>=3.2,<4
+
+# Authentication and cryptography helpers
+PyJWT[crypto]>=2.9,<3
+cryptography>=43,<49
+
+# Logging, metrics and tracing
+structlog>=24,<27
+prometheus-client>=0.21,<1
+opentelemetry-api>=1.28,<2
+opentelemetry-sdk>=1.28,<2
+opentelemetry-exporter-otlp>=1.28,<2
+opentelemetry-instrumentation-fastapi>=0.49b0,<1
+opentelemetry-instrumentation-httpx>=0.49b0,<1
+opentelemetry-instrumentation-sqlalchemy>=0.49b0,<1
+
+# Automated verification
+pytest>=8,<10
+pytest-asyncio>=0.24,<2
+pytest-cov>=6,<8
+pytest-mock>=3.14,<4
+freezegun>=1.5,<2
+moto[ec2,s3,sts,cloudwatch,ce]>=5,<6
+responses>=0.25,<1
+
+# Code quality and dependency security
+ruff>=0.8,<1
+mypy>=1.13,<2
+bandit>=1.8,<2
+pip-audit>=2.7,<3
+
+Important:
+- Checkov is intentionally excluded from the main requirements file.
+- Run python -m pip check after dependency changes.
+- Generate an exact, hash-locked production requirements file only after tests pass in the target Docker build environment.
+- Do not upgrade a single dependency in isolation when it participates in a known compatibility group.
+
+============================================================
+14. CHECKOV REQUIREMENTS
+============================================================
+
+Create requirements-checkov.txt:
+
+checkov==3.3.16
+
+Recommended local environment:
+- .checkov-venv
+
+Commands:
+py -3.12 -m venv .checkov-venv
+.\.checkov-venv\Scripts\Activate.ps1
+python -m pip install --upgrade pip setuptools
+python -m pip install -r requirements-checkov.txt
+python -m pip check
+checkov --version
+
+Run from the project without activation:
+.\.checkov-venv\Scripts\checkov.exe -d .\output\terraform
+
+Alternative production approaches:
+- Approved standalone Checkov executable
+- Checkov container pinned by digest
+- Dedicated CI/CD scanning job
+
+============================================================
+15. EXTERNAL SOFTWARE AND ARTIFACTS
+============================================================
+
+Required:
+- CPython 3.12, 64-bit
+- Git
+- Visual Studio Code
+- Docker Desktop or approved Docker Engine/Compose
+- Terraform CLI
+- TFLint
+- Checkov in an isolated environment/binary/container
+- Ollama runtime if local summaries are enabled
+
+Optional until live-cloud integration:
+- AWS CLI v2
+- Azure CLI
+- PostgreSQL
+- TFLint AWS ruleset plugin
+- TFLint AzureRM ruleset plugin
+- Enterprise scheduler
+- OpenTelemetry collector/backend
+- Prometheus and centralized logs
+- Slack app/webhook
+- Teams app/workflow/webhook
+- Internal Terraform provider/module mirror
+
+Ollama model:
+- Recommended: granite4.1:3b
+- Reuse granite4.1:8b if already installed and resources permit
+- LLM summaries only
+
+============================================================
+16. CORPORATE ACCESS AND SECURITY REQUESTS
+============================================================
+
+Request access to approved mirrors or allow-listing for:
+- pypi.org
+- files.pythonhosted.org
+- github.com
+- GitHub release assets
+- releases.hashicorp.com
+- registry.terraform.io
+- ghcr.io if TFLint or Checkov containers are used
+- approved Docker/container registry
+- ollama.com and approved model registry
+- AWS/Azure endpoints only when live integration is approved
+- Slack/Teams endpoints only when alerting is approved
+
+Request from IT/security:
+- Corporate root and intermediate CA bundle in PEM format
+- Approved HTTP/HTTPS proxy configuration
+- Internal Python package repository
+- Internal container registry
+- Internal Terraform provider/module mirror
+- Approved cloud identities and role definitions
+- Approved secrets manager
+- Storage and retention requirements for telemetry, plans, findings, and audit evidence
+
+Never disable TLS certificate verification as a permanent workaround.
+
+============================================================
+17. ENVIRONMENT VARIABLES
+============================================================
+
+Create .env.example without secrets:
+
+APP_ENV=development
+LOG_LEVEL=INFO
+POLICY_DIR=./policies
+TELEMETRY_INPUT_DIR=./telemetry/incoming
+TELEMETRY_PROCESSED_DIR=./telemetry/processed
+TEMPLATE_DIR=./templates
+TERRAFORM_OUTPUT_DIR=./output/terraform
+REPORT_OUTPUT_DIR=./output/reports
+DATABASE_URL=sqlite:///./data/finops.db
+
+DRY_RUN=true
+ALLOW_REMEDIATION_EXECUTION=false
+REQUIRE_HUMAN_APPROVAL=true
+
+TERRAFORM_EXECUTABLE=C:\Users\T9925\Tools\Terraform\terraform.exe
+TFLINT_EXECUTABLE=C:\Users\T9925\Tools\TFLint\tflint.exe
+CHECKOV_EXECUTABLE=C:\Users\T9925\Documents\DR\agent\.checkov-venv\Scripts\checkov.exe
+
+OLLAMA_HOST=http://127.0.0.1:11434
+OLLAMA_MODEL=granite4.1:3b
+LLM_TEMPERATURE=0
+PROMPT_VERSION=v1
+
+PROTECTED_ENVIRONMENTS=production,prod,critical
+CPU_IDLE_THRESHOLD_PERCENT=3.0
+MINIMUM_OBSERVATION_DAYS=14
+SNAPSHOT_MAX_AGE_DAYS=90
+MAX_REMEDIATIONS_PER_RUN=20
+AGENT_RUN_INTERVAL_MINUTES=60
+
+Corporate certificate variables should be configured outside the repository:
+SSL_CERT_FILE=C:\CompanyCertificates\company-ca-bundle.pem
+REQUESTS_CA_BUNDLE=C:\CompanyCertificates\company-ca-bundle.pem
+HTTPS_PROXY=COMPANY_APPROVED_PROXY_IF_REQUIRED
+HTTP_PROXY=COMPANY_APPROVED_PROXY_IF_REQUIRED
+
+Production secrets must come from an approved secrets manager, not a committed .env file.
+
+============================================================
+18. RECOMMENDED PROJECT STRUCTURE
+============================================================
+
+agent/
+|-- agent/
+|   |-- api/
+|   |-- core/
+|   |   |-- state_machine.py
+|   |   |-- policy_engine.py
+|   |   |-- safety_engine.py
+|   |-- models/
+|   |   |-- telemetry.py
+|   |   |-- policies.py
+|   |   |-- findings.py
+|   |   |-- approvals.py
+|   |-- services/
+|   |   |-- telemetry_loader.py
+|   |   |-- normalizer.py
+|   |   |-- cost_analyzer.py
+|   |   |-- remediation_compiler.py
+|   |   |-- terraform_validator.py
+|   |   |-- summarizer.py
+|   |   |-- audit_store.py
+|   |-- config.py
+|   |-- main.py
+|-- telemetry/
+|   |-- incoming/
+|   |-- processed/
+|-- policies/
+|   |-- finops_rules.yaml
+|-- templates/
+|   |-- terraform/
+|   |-- alerts/
+|-- output/
+|   |-- terraform/
+|   |-- reports/
+|-- data/
+|-- synthetic_data/
+|-- tests/
+|   |-- unit/
+|   |-- integration/
+|   |-- safety/
+|   |-- regression/
+|-- .github/
+|   |-- workflows/
+|-- .vscode/
+|   |-- settings.json
+|-- .env.example
+|-- .gitignore
+|-- requirements.txt
+|-- requirements-checkov.txt
+|-- setup-tools.ps1
+|-- Dockerfile
+|-- docker-compose.yml
+|-- README.md
+
+============================================================
+19. GITIGNORE REQUIREMENTS
+============================================================
+
+.venv/
+.checkov-venv/
+__pycache__/
+*.py[cod]
+.env
+*.pem
+*.key
+.vscode/*
+!.vscode/settings.json
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+data/
+telemetry/incoming/
+telemetry/processed/
+output/
+*.db
+*.sqlite
+*.sqlite3
+.terraform/
+*.tfstate
+*.tfstate.*
+*.tfplan
+crash.log
+.DS_Store
+Thumbs.db
+
+Important:
+- Commit .terraform.lock.hcl after provider versions are intentionally initialized, reviewed, and approved.
+- Never commit credentials, real cloud telemetry, state files, saved plans containing sensitive values, webhook tokens, or generated destructive scripts containing secrets.
+
+============================================================
+20. TOOL SETUP SCRIPT
+============================================================
+
+Create setup-tools.ps1:
+
+$terraformPath = "C:\Users\T9925\Tools\Terraform"
+$tflintPath = "C:\Users\T9925\Tools\TFLint"
+
+if (Test-Path "$terraformPath\terraform.exe") {
+    $env:Path = "$terraformPath;$env:Path"
+    Write-Host "Terraform available."
+} else {
+    Write-Warning "Terraform was not found."
+}
+
+if (Test-Path "$tflintPath\tflint.exe") {
+    $env:Path = "$tflintPath;$env:Path"
+    Write-Host "TFLint available."
+} else {
+    Write-Warning "TFLint was not found."
+}
+
+Use in each new terminal:
+.\.venv\Scripts\Activate.ps1
+.\setup-tools.ps1
+
+============================================================
+21. VALIDATION COMMANDS
+============================================================
+
+Verify Python:
+python --version
+python -c "import sys; print(sys.executable)"
+python -m pip --version
+python -m pip check
+
+Verify core packages:
+python -c "import pandas, numpy, pydantic, yaml, jinja2, sqlalchemy; print('Core FinOps packages ready')"
+
+Verify orchestration:
+python -c "from transitions import Machine; from apscheduler.schedulers.background import BackgroundScheduler; print('State machine and scheduler ready')"
+
+Verify cloud SDKs:
+python -c "import boto3; from azure.identity import DefaultAzureCredential; from azure.mgmt.compute import ComputeManagementClient; print('Cloud SDKs ready')"
+
+Verify operations packages:
+python -c "import fastapi, uvicorn, structlog, prometheus_client; print('Operations packages ready')"
+
+Verify SQLite:
+python -c "from sqlalchemy import create_engine, text; e=create_engine('sqlite:///./data/finops.db'); c=e.connect(); print(c.execute(text('select 1')).scalar()); c.close()"
+
+Verify Ollama:
+ollama --version
+ollama list
+Invoke-RestMethod -Uri "http://127.0.0.1:11434/api/tags"
+
+Make tools available in the current terminal:
+$env:Path += ";C:\Users\T9925\Tools\Terraform;C:\Users\T9925\Tools\TFLint"
+
+Verify Terraform and TFLint:
+terraform version
+tflint --version
+where.exe terraform
+where.exe tflint
+
+Verify Docker:
+docker --version
+docker compose version
+docker info
+
+Verify Checkov:
+.\.checkov-venv\Scripts\checkov.exe --version
+.\.checkov-venv\Scripts\python.exe -m pip check
+
+Quality and security checks:
+pytest
+pytest --cov=agent --cov-report=term-missing
+ruff check .
+mypy agent
+bandit -r agent
+pip-audit
+
+Terraform validation sequence:
+terraform fmt -check
+terraform init -backend=false
+terraform validate
+tflint
+.\.checkov-venv\Scripts\checkov.exe -d .\output\terraform
+terraform plan -out=reviewed.tfplan
+
+Do not run terraform apply during the initial project phase.
+
+============================================================
+22. INITIAL POLICY EXAMPLE
+============================================================
+
+policy_version: "1.0"
+
+protected_environments:
+  - production
+  - prod
+  - critical
+
+rules:
+  - rule_id: FINOPS-COMPUTE-001
+    name: Idle compute instance
+    resource_type: compute_instance
+    enabled: true
+    conditions:
+      maximum_cpu_percent: 3.0
+      minimum_observation_days: 14
+    recommended_action: DOWNSIZE
+    severity: medium
+    requires_human_approval: true
+
+  - rule_id: FINOPS-STORAGE-001
+    name: Unattached storage volume
+    resource_type: storage_volume
+    enabled: true
+    conditions:
+      attachment_status: unattached
+      minimum_unattached_days: 14
+    recommended_action: ARCHIVE
+    severity: medium
+    requires_human_approval: true
+
+  - rule_id: FINOPS-SNAPSHOT-001
+    name: Legacy snapshot
+    resource_type: snapshot
+    enabled: true
+    conditions:
+      minimum_age_days: 90
+      referenced: false
+    recommended_action: ARCHIVE
+    severity: low
+    requires_human_approval: true
+
+============================================================
+23. PRODUCTION SAFETY REQUIREMENTS
+============================================================
+
+- DRY_RUN defaults to true.
+- ALLOW_REMEDIATION_EXECUTION defaults to false.
+- Human approval is mandatory for all material actions.
+- Discovery and remediation identities must be separate.
+- Discovery identity should be read-only.
+- Remediation identity must be least-privilege and short-lived.
+- Prefer workload identity, OIDC, or managed identity over static keys.
+- Production, critical, legal-hold, and exempt resources must be protected.
+- Unknown or conflicting tags must cause REVIEW_REQUIRED.
+- Missing owner information must cause REVIEW_REQUIRED.
+- Enforce a minimum observation period.
+- Enforce maximum actions per run and concurrency locks.
+- Use idempotency keys to prevent duplicate actions.
+- Preserve evidence and policy versions for every decision.
+- Do not let the LLM choose, alter, or execute remediation actions.
+- Do not execute strings generated by the LLM.
+- Use allow-listed Jinja2 templates with strict parameter validation.
+- Run Terraform formatting, validation, linting, policy scanning, and plan review.
+- Pin Terraform providers/modules and container images.
+- Store reviewed plan artifacts and checksums.
+- Redact account IDs, subscription IDs, owner data, and costs where required in notifications.
+- Prevent secrets from entering logs, Terraform output, state, plans, or reports.
+- Encrypt stored telemetry, plans, findings, and audit records.
+- Define retention and secure-deletion policies.
+- Add rollback, incident, exception, and emergency-stop procedures.
+- Integrate with enterprise change management before any production execution.
+
+============================================================
+24. TESTING AND ACCEPTANCE CRITERIA
+============================================================
+
+Minimum functional acceptance:
+- JSON and CSV inputs load correctly.
+- Invalid telemetry is rejected with controlled errors.
+- Provider records normalize into the common schema.
+- YAML policies load and validate.
+- Production resources are protected.
+- Policy matches are deterministic and explainable.
+- Savings formulas return traceable results.
+- Jinja2 generates expected Terraform artifacts.
+- Terraform formatting and validation run successfully.
+- TFLint and Checkov results are captured.
+- Findings and audit records persist.
+- Ollama produces summaries only from validated findings.
+
+Minimum safety acceptance:
+- No production-tagged resource receives a destructive artifact.
+- No critical, legal-hold, or exempt resource receives a destructive artifact.
+- Unknown environment and missing owner lead to REVIEW_REQUIRED.
+- Insufficient observation history prevents action.
+- Maximum remediation/run limit is enforced.
+- Duplicate execution is prevented.
+- Failed Terraform validation blocks approval.
+- Failed TFLint or Checkov gates block approval unless an auditable exception exists.
+- The LLM cannot change policy outcomes.
+- Remediation execution remains disabled.
+
+Minimum quality acceptance:
+- Synthetic ground truth covers positive, negative, protected, ambiguous, malformed, and edge cases.
+- Tests assert exact rule IDs and outcomes.
+- Savings calculations include currency and rounding tests.
+- Timezone and observation-window tests pass.
+- Policy-version changes trigger regression tests.
+- Generated templates match reviewed snapshots or semantic expectations.
+
+Minimum operational acceptance:
+- Health/readiness endpoints work.
+- Scheduler does not create overlapping runs.
+- Database and Ollama failures produce controlled errors.
+- Logs contain run IDs but no secrets.
+- Docker container runs with a non-root user where supported.
+- Persistent data is mounted outside the container layer.
+- CI/CD blocks release on failed tests, dependency scans, or IaC validation.
+
+============================================================
+25. CI/CD QUALITY GATES
+============================================================
+
+Recommended pipeline stages:
+1. Install Python 3.12 dependencies from approved sources.
+2. Run python -m pip check.
+3. Run ruff and mypy.
+4. Run unit and safety tests.
+5. Run integration tests with synthetic telemetry.
+6. Generate test Terraform artifacts.
+7. Run terraform fmt and validate.
+8. Run TFLint.
+9. Run Checkov in a separate job/environment/container.
+10. Run Bandit and pip-audit.
+11. Build the Docker image.
+12. Scan and sign the image.
+13. Publish only to an approved registry.
+14. Deploy in dry-run mode.
+
+Pin GitHub Actions or other CI tasks to approved immutable commit SHAs according to company policy.
+
+============================================================
+26. IMPORTANT DESIGN DECISIONS
+============================================================
+
+- This is a deterministic policy agent with optional AI summarization, not an LLM-controlled cloud operator.
+- Rules and safety gates decide outcomes.
+- Synthetic data is used for development.
+- Live AWS/Azure connections are introduced only after local safety tests pass.
+- Terraform generation is plan-only in the initial phase.
+- Checkov remains isolated from the main application environment because of dependency constraints.
+- Explicit executable paths are preferred because permanent PATH editing is unavailable.
+- SQLite is for local demonstration; PostgreSQL is preferred for multi-instance production.
+- APScheduler is acceptable for a local demonstration; production should use an approved scheduler.
+- Estimated savings are projections, not guaranteed financial results.
+- Final remediation decisions require authorized human approval.
+
+============================================================
+27. GUIDANCE FOR FUTURE AI ASSISTANTS
+============================================================
+
+When helping with this project:
+1. Use Python 3.12-compatible code and packages.
+2. Preserve deterministic decision-making.
+3. Never delegate remediation decisions to the LLM.
+4. Never enable automatic destructive execution by default.
+5. Keep DRY_RUN=true and ALLOW_REMEDIATION_EXECUTION=false in examples.
+6. Use typed Pydantic models and explicit enums.
+7. Include unit, safety, integration, and regression tests.
+8. Treat telemetry, tags, policies, and generated artifacts as untrusted input.
+9. Use allow-listed templates and strict rendering contexts.
+10. Preserve policy IDs, versions, evidence, calculations, and validation results.
+11. Use explicit executable paths for Terraform, TFLint, and Checkov.
+12. Account for the separate Checkov environment.
+13. Do not recommend disabling TLS verification.
+14. Account for corporate CA, proxy, and artifact-mirroring constraints.
+15. Distinguish demo architecture from production architecture.
+16. Do not simulate successful cloud, tool, or network output.
+17. Do not place secrets or real cloud identifiers in code examples.
+18. Identify the destination filename for every generated code block.
+19. Explain any dependency change and update the correct requirements file.
+20. Require human approval and change-management integration before apply/delete actions.
+
+============================================================
+28. CURRENT NEXT STEPS
+============================================================
+
+1. Remove Checkov from the main .venv and confirm python -m pip check passes.
+2. Create and verify .checkov-venv or install an approved standalone Checkov binary.
+3. Create setup-tools.ps1 for Terraform and TFLint session paths.
+4. Run Terraform and TFLint smoke tests.
+5. Confirm Docker engine access with docker info.
+6. Pull or confirm granite4.1:3b with ollama list.
+7. Create the project folder structure.
+8. Create .gitignore and .env.example.
+9. Create strict telemetry Pydantic models.
+10. Create synthetic AWS/Azure telemetry and ground truth.
+11. Implement JSON/CSV loading and normalization.
+12. Implement YAML policy loading and validation.
+13. Implement the production safety engine.
+14. Implement deterministic policy evaluation.
+15. Implement transparent savings calculations.
+16. Implement the state machine.
+17. Implement Jinja2 Terraform templates.
+18. Implement Terraform/TFLint/Checkov validation orchestration.
+19. Implement SQLite audit persistence.
+20. Implement Ollama summary generation.
+21. Add FastAPI operational endpoints.
+22. Add Docker and CI/CD after the local workflow passes.
+23. Add live AWS/Azure connectors only after approval and safety validation.
+
+============================================================
+29. FUTURE PROMPT TEMPLATE
+============================================================
+
+TASK:
+[Describe exactly what should be built, fixed, reviewed, or explained.]
+
+CURRENT FILES OR CODE:
+[Paste the relevant source files, folder tree, command output, or error.]
+
+EXPECTED OUTPUT:
+[Specify code files, tests, commands, documentation, or architecture changes.]
+
+CONSTRAINTS:
+- Windows VM
+- Python 3.12
+- Project path: C:\Users\T9925\Documents\DR\agent
+- 16 GB RAM
+- Local Ollama
+- Terraform and TFLint use explicit local executable paths
+- Checkov runs separately from the main .venv
+- Corporate SSL/CA restrictions may apply
+- Synthetic telemetry first
+- Dry-run and plan-only
+- No autonomous destructive execution
+- Human approval for material actions
+
+ACCEPTANCE CRITERIA:
+[List the exact conditions that must pass.]
+
+END OF PROJECT CONTEXT

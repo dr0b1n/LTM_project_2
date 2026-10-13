@@ -1,0 +1,62 @@
+# Python environments and caches
+.venv/
+venv/
+.checkov-venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.coverage
+htmlcov/
+
+# Secrets and local configuration
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.pfx
+*.p12
+
+# Generated project output
+output/
+
+# Terraform local state and working data
+.terraform/
+*.tfstate
+*.tfstate.*
+*.tfplan
+.terraform.lock.hcl
+
+# Temporary extracted/downloaded packages
+session*-extracted/
+*.zip
+
+# Duplicate development packages and obsolete source copies
+copilot files/
+archive/*.py
+
+# Local smoke tests and old copies
+old versions/
+tool-smoke-test/
+
+# Generated inventory and temporary helper files
+project-file-inventory.txt
+project-file-inventory.csv
+inventory-project-fixed.ps1
+validate-terraform-fixed.ps1
+security-review-fixed.ps1
+README_LTM_project_2.md
+README.before-session7.md
+README.txt
+package_test.txt
+
+# Editor and operating-system files
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+*.tmp
+*.bak
+*.log

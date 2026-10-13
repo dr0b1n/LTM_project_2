@@ -1,0 +1,3 @@
+Set-Location "C:\Users\T9925\Documents\DR\agent"
+.\.venv\Scripts\Activate.ps1
+.\setup-tools.ps1

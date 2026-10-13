@@ -1,0 +1,73 @@
+policy_version: '1.0'
+dataset_note: Synthetic demonstration policies. Safety gates take precedence over
+  optimization rules.
+protected_environments:
+- production
+- prod
+- critical
+safety_gates:
+- gate_id: SAFETY-001
+  name: Protected resource gate
+  when: production_protected or critical_protected or legal_hold
+  outcome: PROTECTED
+  recommended_action: NO_ACTION
+- gate_id: SAFETY-002
+  name: Explicit exemption gate
+  when: exemption_reason is not null or tags.finops_exempt == true
+  outcome: PROTECTED
+  recommended_action: NO_ACTION
+- gate_id: SAFETY-003
+  name: Missing ownership gate
+  when: owner is null or blank
+  outcome: REVIEW_REQUIRED
+  recommended_action: REVIEW_REQUIRED
+- gate_id: SAFETY-004
+  name: Unknown or conflicting environment gate
+  when: environment is unknown or conflicts with tags.environment
+  outcome: REVIEW_REQUIRED
+  recommended_action: REVIEW_REQUIRED
+rules:
+- rule_id: FINOPS-COMPUTE-001
+  name: Idle compute instance
+  resource_type: compute_instance
+  enabled: true
+  conditions:
+    maximum_cpu_percent: 3.0
+    minimum_observation_days: 14
+  recommended_action: DOWNSIZE
+  severity: medium
+  requires_human_approval: true
+  savings_method: current_monthly_cost - recommended_monthly_cost
+- rule_id: FINOPS-STORAGE-001
+  name: Unattached storage volume
+  resource_type: storage_volume
+  enabled: true
+  conditions:
+    attachment_status: unattached
+    minimum_unattached_days: 14
+  recommended_action: ARCHIVE
+  severity: medium
+  requires_human_approval: true
+  savings_method: current_monthly_cost - recommended_monthly_cost
+- rule_id: FINOPS-SNAPSHOT-001
+  name: Old unreferenced snapshot
+  resource_type: snapshot
+  enabled: true
+  conditions:
+    minimum_age_days: 90
+    referenced: false
+  recommended_action: ARCHIVE
+  severity: low
+  requires_human_approval: true
+  savings_method: current_monthly_cost - recommended_monthly_cost
+- rule_id: FINOPS-IP-001
+  name: Unassociated public IP
+  resource_type: public_ip
+  enabled: true
+  conditions:
+    attachment_status: unattached
+    referenced: false
+  recommended_action: REVIEW_REQUIRED
+  severity: low
+  requires_human_approval: true
+  savings_method: current_monthly_cost - recommended_monthly_cost
